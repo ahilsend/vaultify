@@ -1,0 +1,15 @@
+language: go
+
+go:
+- "1.11.x"
+
+env:
+- GO111MODULE=on
+- CGO_ENABLED=0
+
+install:
+- go mod download
+
+script:
+- go test ./...
+- go build cmd/vaultify/vaultify.go

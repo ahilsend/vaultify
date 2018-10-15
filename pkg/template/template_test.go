@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	
+	"github.com/hashicorp/go-hclog"
 
 	"github.com/ahilsend/vaultify/pkg/secrets"
 )
@@ -59,7 +61,7 @@ credentials:
 }
 
 func renderAndCompare(secretReader secrets.SecretReader, input string, expectedOutput string) error {
-	template := New(secretReader)
+	template := New(hclog.Default(), secretReader)
 
 	output := new(bytes.Buffer)
 	if _, err := template.render(strings.NewReader(input), output); err != nil {
