@@ -27,14 +27,14 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:          "vaultify",
-		Short:        "TODO",
+		Short:        "Vaultify templates file from vault secrets and auto renews leases",
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(0),
 	}
 
 	templateCmd = &cobra.Command{
 		Use:   "template",
-		Short: "TODO",
+		Short: "Templating without renewing leases.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.templateOptions.Role = flags.role
@@ -56,7 +56,7 @@ var (
 
 	reneawLeasesCmd = &cobra.Command{
 		Use:   "renew-leases",
-		Short: "TODO",
+		Short: "Continuously renews all secret leases",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.renewLeasesOptions.Role = flags.role
@@ -77,7 +77,7 @@ var (
 
 	runCmd = &cobra.Command{
 		Use:   "run",
-		Short: "TODO",
+		Short: "Templates a configuration file, and then continuously renews the secret leases. This is combines `template` and `renew-leases`, and does not require writing the lease information to file.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.runOptions.Role = flags.role
@@ -112,9 +112,9 @@ func logLevel() hclog.Level {
 }
 
 func init() {
-	rootCmd.PersistentFlags().CountVarP(&flags.logLevel, "verbose", "v", "Log level TODO")
+	rootCmd.PersistentFlags().CountVarP(&flags.logLevel, "verbose", "v", "Log level. Defaults to 'error', Set multiple times to increase log level")
 	rootCmd.PersistentFlags().StringVar(&flags.vaultAddress, "vault", "", "Vault address")
-	rootCmd.PersistentFlags().StringVar(&flags.role, "role", "", "Vault role to assume")
+	rootCmd.PersistentFlags().StringVar(&flags.role, "role", "", "Vault kubernetes role to assume")
 	flag.CommandLine.VisitAll(func(gf *flag.Flag) {
 		rootCmd.PersistentFlags().AddGoFlag(gf)
 	})
@@ -122,7 +122,7 @@ func init() {
 	templateCmd.Flags().StringVar(&flags.templateOptions.TemplateFileName, "template-file", "", "Template file to render")
 	templateCmd.Flags().StringVar(&flags.templateOptions.OutputFileName, "output-file", "", "Output file")
 	templateCmd.Flags().StringVar(&flags.templateOptions.SecretsOutputFileName, "secrets-output-file", "", "Secrets output file")
-	templateCmd.Flags().StringToStringVar(&flags.templateOptions.Variables, "var", map[string]string{}, "TODO")
+	templateCmd.Flags().StringToStringVar(&flags.templateOptions.Variables, "var", map[string]string{}, "Variables to use instead of fetching secrets from vault. Does not require vault, this is for testing the templating only.")
 
 	reneawLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.SecretsFileName, "secrets-file", "", "Secrets file")
 

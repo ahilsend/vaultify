@@ -117,6 +117,7 @@ func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) (secrets.Se
 
 	resultSecrets := secrets.Secrets{}
 	tmpl := template.New(templateName)
+	tmpl.Delims("<{", "}>")
 	funcMap := sprig.GenericFuncMap()
 	funcMap["vault"] = func(name string) (*secrets.Secret, error) {
 		secret, err := t.getVaultSecret(name)

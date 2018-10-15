@@ -15,9 +15,9 @@ func TestRenderSimple(t *testing.T) {
 
 	input := `
 credentials:
-  {{- $mySecret := vault "secret/my/key" }}
-  attribute1: {{ $mySecret.Data.attribute1 }}
-  attribute2: {{ $mySecret.Data.attribute2 }}
+  <{- $mySecret := vault "secret/my/key" }>
+  attribute1: <{ $mySecret.Data.attribute1 }>
+  attribute2: <{ $mySecret.Data.attribute2 }>
 `
 
 	expectedOutput := `
@@ -40,9 +40,9 @@ func TestRenderDefault(t *testing.T) {
 
 	input := `
 credentials:
-  {{- $mySecret := vault "secret/my/key" }}
-  attribute1: {{ $mySecret.Data.attribute1 | default "nope1" }}
-  attribute2: {{ $mySecret.Data.attribute2 | default "nope2" | quote }}
+  <{- $mySecret := vault "secret/my/key" }>
+  attribute1: <{ $mySecret.Data.attribute1 | default "nope1" }>
+  attribute2: <{ $mySecret.Data.attribute2 | default "nope2" | quote }>
 `
 
 	expectedOutput := `
