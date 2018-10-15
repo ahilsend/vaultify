@@ -10,9 +10,9 @@ Vaultify templates file from vault secrets and auto renews leases
 template.yaml
 ```yaml
 credentials:
-  <{- $admin := vault "database/creds/maindb-admin" }>
-      username: <{ $admin.Data.username | quote }>
-      password: <{ $admin.Data.password | quote }>
+    <{- $admin := vault "database/creds/maindb-admin" }>
+    username: <{ $admin.Data.username | quote }>
+    password: <{ $admin.Data.password | quote }>
 ```
 
 Running vaultify and continuously renew leases
