@@ -9,6 +9,9 @@ env:
 install:
 - go mod download
 
-script:
-- go test ./...
-- go build cmd/vaultify/vaultify.go
+jobs:
+  include:
+  - stage: test
+    script: go test ./...
+  - stage: build
+    script: go build cmd/vaultify/vaultify.go
