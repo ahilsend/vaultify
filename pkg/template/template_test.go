@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	
+
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/ahilsend/vaultify/pkg/secrets"

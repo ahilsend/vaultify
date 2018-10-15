@@ -4,8 +4,7 @@ go:
 - "1.11.x"
 
 env:
-- GO111MODULE=on
-- CGO_ENABLED=0
+- GO111MODULE=on CGO_ENABLED=0
 
 install:
 - go mod download
