@@ -8,8 +8,8 @@ type Options struct {
 	Role string
 
 	// TODO
-	TemplateFileName      string
-	OutputFileName        string
+	TemplateFileName string
+	OutputFileName   string
 }
 
 // IsValid returns true if some values are filled into the options.

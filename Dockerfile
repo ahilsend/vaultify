@@ -2,6 +2,8 @@ FROM golang:1.11 as builder
 
 WORKDIR /build
 COPY go.* ./
+RUN go mod download
+
 COPY cmd ./cmd
 COPY pkg ./pkg
 

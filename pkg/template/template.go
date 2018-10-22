@@ -57,7 +57,7 @@ func createSecretReader(logger hclog.Logger, options *Options) (secrets.SecretRe
 		return secrets.NewMapReader(values), nil
 	}
 
-	vaultClient, err := vault.NewVaultClient(logger, options.VaultAddress, options.Role)
+	vaultClient, err := vault.NewClient(logger, options.VaultAddress, options.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (t *VaultifyTemplate) getVaultSecret(name string) (*secrets.Secret, error) 
 	return t.secretReader.Get(name)
 }
 
-func (t *VaultifyTemplate) RenderToFile(templateFile string, outputFile string) (secrets.Secrets, error) {
+func (t *VaultifyTemplate) RenderToFile(templateFile string, outputFile string) (*secrets.Secrets, error) {
 	t.logger.Info("Rendering template", "template", templateFile)
 	templateBytes, err := ioutil.ReadFile(templateFile)
 	if err != nil {
@@ -109,13 +109,16 @@ func (t *VaultifyTemplate) RenderToFile(templateFile string, outputFile string) 
 	return resultSecrets, nil
 }
 
-func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) (secrets.Secrets, error) {
+func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) (*secrets.Secrets, error) {
 	inputBytes, err := ioutil.ReadAll(input)
 	if err != nil {
 		return nil, err
 	}
 
-	resultSecrets := secrets.Secrets{}
+	result := secrets.Secrets{
+		AuthSecret: t.secretReader.GetAuthSecret(),
+		Secrets:    map[string]secrets.Secret{},
+	}
 	tmpl := template.New(templateName)
 	tmpl.Delims("<{", "}>")
 	funcMap := sprig.GenericFuncMap()
@@ -125,7 +128,7 @@ func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) (secrets.Se
 			return nil, err
 		}
 
-		resultSecrets[name] = *secret
+		result.Secrets[name] = *secret
 
 		return secret, err
 	}
@@ -141,5 +144,5 @@ func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) (secrets.Se
 		return nil, err
 	}
 
-	return resultSecrets, nil
+	return &result, nil
 }

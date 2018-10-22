@@ -11,7 +11,7 @@ import (
 )
 
 func Run(logger hclog.Logger, options *Options) error {
-	vaultClient, err := vault.NewVaultClient(logger, options.VaultAddress, options.Role)
+	vaultClient, err := vault.NewClient(logger, options.VaultAddress, options.Role)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func Run(logger hclog.Logger, options *Options) error {
 		return err
 	}
 
-	go vaultClient.RenewLeases(ctx, secretMap)
+	go vaultClient.RenewLeases(ctx, secretMap.Secrets)
 
 	return vaultClient.Wait(ctx)
 }

@@ -3,6 +3,7 @@ package vault
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault/api"
@@ -12,32 +13,73 @@ import (
 
 type Client struct {
 	ApiClient   *api.Client
+	AuthSecret  *api.Secret
 	authRenewer *api.Renewer
 	doneCh      chan error
 	logger      hclog.Logger
 }
 
-func NewVaultClient(logger hclog.Logger, vaultAddr string, role string) (*Client, error) {
-	vaultConfig := api.DefaultConfig()
-	if vaultAddr != "" {
-		vaultConfig.Address = vaultAddr
+func NewClient(logger hclog.Logger, vaultAddr string, role string) (*Client, error) {
+	client, err := createClient(vaultAddr)
+	if err != nil {
+		return nil, err
 	}
 
-	client, err := api.NewClient(vaultConfig)
-	renewer, err := authenticate(client, logger, role)
+	authSecret, err := kubernetesAuthentication(client, logger, role)
+	if err != nil {
+		return nil, err
+	}
+	renewer, err := authRenewer(client, authSecret)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
 		ApiClient:   client,
+		AuthSecret:  authSecret,
 		authRenewer: renewer,
 		doneCh:      make(chan error, 1),
 		logger:      logger,
 	}, err
 }
 
-func authenticate(v *api.Client, logger hclog.Logger, role string) (*api.Renewer, error) {
+func NewClientFromSecret(logger hclog.Logger, vaultAddr string, authSecret *api.Secret) (*Client, error) {
+	client, err := createClient(vaultAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	renewer, err := authRenewer(client, authSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		ApiClient:   client,
+		AuthSecret:  authSecret,
+		authRenewer: renewer,
+		doneCh:      make(chan error, 1),
+		logger:      logger,
+	}, err
+}
+
+func createClient(vaultAddr string) (*api.Client, error) {
+	vaultConfig := api.DefaultConfig()
+	if vaultAddr != "" {
+		vaultConfig.Address = vaultAddr
+	}
+
+	return api.NewClient(vaultConfig)
+}
+
+func authRenewer(v *api.Client, authSecret *api.Secret) (*api.Renewer, error) {
+	v.SetToken(authSecret.Auth.ClientToken)
+	return v.NewRenewer(&api.RenewerInput{
+		Secret: authSecret,
+	})
+}
+
+func kubernetesAuthentication(v *api.Client, logger hclog.Logger, role string) (*api.Secret, error) {
 	authMethod, err := kubernetes.NewKubernetesAuthMethod(&auth.AuthConfig{
 		MountPath: "auth/kubernetes",
 		Logger:    logger,
@@ -53,16 +95,7 @@ func authenticate(v *api.Client, logger hclog.Logger, role string) (*api.Renewer
 		return nil, err
 	}
 
-	authSecret, err := v.Logical().Write(path, data)
-	if err != nil {
-		return nil, err
-	}
-
-	v.SetToken(authSecret.Auth.ClientToken)
-
-	return v.NewRenewer(&api.RenewerInput{
-		Secret: authSecret,
-	})
+	return v.Logical().Write(path, data)
 }
 
 func (v *Client) Wait(ctx context.Context) error {
@@ -102,8 +135,7 @@ func (v *Client) StartAuthRenewal(ctx context.Context) {
 			v.doneCh <- fmt.Errorf("auth lease renewer done: %v", err)
 			return
 
-		case renewOutput := <-v.authRenewer.RenewCh():
-			v.ApiClient.SetToken(renewOutput.Secret.Auth.ClientToken)
+		case <-v.authRenewer.RenewCh():
 			v.logger.Info("renewed lease for auth token")
 			break
 		}

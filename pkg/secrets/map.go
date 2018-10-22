@@ -26,3 +26,7 @@ func (reader *MapSecretReader) Get(name string) (*Secret, error) {
 
 	return nil, fmt.Errorf("unknown key '%s'", name)
 }
+
+func (reader *MapSecretReader) GetAuthSecret() *Secret {
+	return nil
+}

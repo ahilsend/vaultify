@@ -8,21 +8,19 @@ import (
 )
 
 func Run(logger hclog.Logger, options *Options) error {
+	secretResult, err := secrets.Read(options.SecretsFileName)
+	if err != nil {
+		return err
+	}
 
-	vaultClient, err := vault.NewVaultClient(logger, options.VaultAddress, options.Role)
+	vaultClient, err := vault.NewClientFromSecret(logger, options.VaultAddress, secretResult.AuthSecret)
 	if err != nil {
 		return err
 	}
 
 	ctx := context.Background()
-
-	secretMap, err := secrets.Read(options.SecretsFileName)
-	if err != nil {
-		return err
-	}
-
 	go vaultClient.StartAuthRenewal(ctx)
-	go vaultClient.RenewLeases(ctx, secretMap)
+	go vaultClient.RenewLeases(ctx, secretResult.Secrets)
 
 	return vaultClient.Wait(ctx)
 }
