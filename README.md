@@ -5,9 +5,15 @@
 
 Vaultify templates file from vault secrets and auto renews leases
 
-## Exammple
+## Running vaultify
 
-template.yaml
+`vaultify` has three commands, `template`, `renew-leases`, and `run`
+
+### Template
+
+The `template` command reads a template, renders the vault secrets into it, and stores the result in a file. In addition it also stores the secret lease information in a secrets file to be able to renew the leases.
+
+template.yaml example:
 ```yaml
 credentials:
     <{- $admin := vault "database/creds/maindb-admin" }>
@@ -15,7 +21,33 @@ credentials:
     password: <{ $admin.Data.password | quote }>
 ```
 
-Running vaultify and continuously renew leases
+Running `vaultify template`:
+```bash
+vaultify template --vault https://vault.vault:8200 \
+                  --role maindb-admin \
+                  --template-file template.yaml \
+                  --output-file /app/config.yaml \
+                  --secrets-output-file /app/secrets.json \
+                  -vv
+```
+
+### Renew-leases
+
+The `renew-leases` command renews leases that for created by `template` command and stored in a secrets file.
+
+Running `vaultify renew-leases`:
+```bash
+vaultify renew-leases --vault https://vault.vault:8200 \
+                      --role maindb-admin \
+                      --secrets-output-file /app/secrets.json \
+                      -vv
+```
+
+
+### Run
+
+Running vaultify and continuously renew leases:
+
 ```bash
 vaultify run --vault https://vault.vault:8200 \
              --role maindb-admin \
@@ -23,3 +55,5 @@ vaultify run --vault https://vault.vault:8200 \
              --output-file /app/config.yaml \
              -vv
 ```
+
+Note that running only this might not work for all work loads. If you run your application in kubernetes and your configuration needs to be rendered before the application starts, you should run the `template` command in a initContainer and the `renew-leases` command in a side-car.
