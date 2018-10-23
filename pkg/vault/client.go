@@ -3,7 +3,6 @@ package vault
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault/api"
@@ -20,63 +19,48 @@ type Client struct {
 }
 
 func NewClient(logger hclog.Logger, vaultAddr string, role string) (*Client, error) {
-	client, err := createClient(vaultAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	authSecret, err := kubernetesAuthentication(client, logger, role)
-	if err != nil {
-		return nil, err
-	}
-	renewer, err := authRenewer(client, authSecret)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Client{
-		ApiClient:   client,
-		AuthSecret:  authSecret,
-		authRenewer: renewer,
-		doneCh:      make(chan error, 1),
-		logger:      logger,
-	}, err
+	return createClient(vaultAddr, logger, func(client *api.Client) (*api.Secret, error) {
+		return kubernetesAuthentication(client, logger, role)
+	})
 }
 
 func NewClientFromSecret(logger hclog.Logger, vaultAddr string, authSecret *api.Secret) (*Client, error) {
-	client, err := createClient(vaultAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	renewer, err := authRenewer(client, authSecret)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Client{
-		ApiClient:   client,
-		AuthSecret:  authSecret,
-		authRenewer: renewer,
-		doneCh:      make(chan error, 1),
-		logger:      logger,
-	}, err
+	return createClient(vaultAddr, logger, func(client *api.Client) (*api.Secret, error) {
+		return authSecret, nil
+	})
 }
 
-func createClient(vaultAddr string) (*api.Client, error) {
+func createClient(vaultAddr string, logger hclog.Logger, auth func(*api.Client) (*api.Secret, error)) (*Client, error) {
 	vaultConfig := api.DefaultConfig()
 	if vaultAddr != "" {
 		vaultConfig.Address = vaultAddr
 	}
 
-	return api.NewClient(vaultConfig)
-}
+	client, err := api.NewClient(vaultConfig)
+	if err != nil {
+		return nil, err
+	}
 
-func authRenewer(v *api.Client, authSecret *api.Secret) (*api.Renewer, error) {
-	v.SetToken(authSecret.Auth.ClientToken)
-	return v.NewRenewer(&api.RenewerInput{
+	authSecret, err := auth(client)
+	if err != nil {
+		return nil, err
+	}
+
+	client.SetToken(authSecret.Auth.ClientToken)
+	renewer, err := v.NewRenewer(&api.RenewerInput{
 		Secret: authSecret,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		ApiClient:   client,
+		AuthSecret:  authSecret,
+		authRenewer: renewer,
+		doneCh:      make(chan error, 1),
+		logger:      logger,
+	}, err
 }
 
 func kubernetesAuthentication(v *api.Client, logger hclog.Logger, role string) (*api.Secret, error) {

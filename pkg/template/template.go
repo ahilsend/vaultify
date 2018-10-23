@@ -74,7 +74,7 @@ func New(logger hclog.Logger, secretReader secrets.SecretReader) *VaultifyTempla
 
 func (t *VaultifyTemplate) getVaultSecret(name string) (*secrets.Secret, error) {
 	if name == "" {
-		return nil, errors.New("you need to pass a name to the 'key' function")
+		return nil, errors.New("you need to pass a name to the 'vault' function")
 	}
 
 	return t.secretReader.Get(name)

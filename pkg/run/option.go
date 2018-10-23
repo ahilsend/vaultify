@@ -2,14 +2,15 @@ package run
 
 // Options customizes the parameters of templating.
 type Options struct {
-	// TODO
+	// Vault api address. Can be specified via VAULT_ADDR instead
 	VaultAddress string
-	// TODO
+	// Kubernetes auth role to use
 	Role string
 
-	// TODO
+	// Template file to be rendered
 	TemplateFileName string
-	OutputFileName   string
+	// Location of the output file
+	OutputFileName string
 }
 
 // IsValid returns true if some values are filled into the options.

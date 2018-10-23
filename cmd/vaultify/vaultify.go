@@ -113,7 +113,7 @@ func logLevel() hclog.Level {
 
 func init() {
 	rootCmd.PersistentFlags().CountVarP(&flags.logLevel, "verbose", "v", "Log level. Defaults to 'error', Set multiple times to increase log level")
-	rootCmd.PersistentFlags().StringVar(&flags.vaultAddress, "vault", "", "Vault address")
+	rootCmd.PersistentFlags().StringVar(&flags.vaultAddress, "vault", "", "Vault address. Can be specified via VAULT_ADDR instead")
 	rootCmd.PersistentFlags().StringVar(&flags.role, "role", "", "Vault kubernetes role to assume")
 	flag.CommandLine.VisitAll(func(gf *flag.Flag) {
 		rootCmd.PersistentFlags().AddGoFlag(gf)

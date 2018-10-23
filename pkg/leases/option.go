@@ -2,12 +2,12 @@ package leases
 
 // Options customizes the parameters of templating.
 type Options struct {
-	// TODO
+	// Vault api address. Can be specified via VAULT_ADDR instead
 	VaultAddress string
-	// TODO
+	// Kubernetes auth role to use
 	Role string
 
-	// TODO
+	// Secrets file location, where the secret leases are stored
 	SecretsFileName string
 }
 
