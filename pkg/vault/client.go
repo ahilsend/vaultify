@@ -47,7 +47,7 @@ func createClient(vaultAddr string, logger hclog.Logger, auth func(*api.Client) 
 	}
 
 	client.SetToken(authSecret.Auth.ClientToken)
-	renewer, err := v.NewRenewer(&api.RenewerInput{
+	renewer, err := client.NewRenewer(&api.RenewerInput{
 		Secret: authSecret,
 	})
 	if err != nil {
