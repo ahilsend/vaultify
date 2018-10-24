@@ -3,7 +3,7 @@ package vault
 import (
 	"context"
 	"fmt"
-
+	"github.com/ahilsend/vaultify/pkg/prometheus"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/command/agent/auth"
@@ -14,23 +14,26 @@ type Client struct {
 	ApiClient   *api.Client
 	AuthSecret  *api.Secret
 	authRenewer *api.Renewer
+	role        string
 	doneCh      chan error
 	logger      hclog.Logger
 }
 
 func NewClient(logger hclog.Logger, vaultAddr string, role string) (*Client, error) {
-	return createClient(vaultAddr, logger, func(client *api.Client) (*api.Secret, error) {
-		return kubernetesAuthentication(client, logger, role)
+	return createClient(vaultAddr, logger, func(client *api.Client) (*api.Secret, string, error) {
+		authSecret, err := kubernetesAuthentication(client, logger, role)
+		return authSecret, role, err
 	})
 }
 
 func NewClientFromSecret(logger hclog.Logger, vaultAddr string, authSecret *api.Secret) (*Client, error) {
-	return createClient(vaultAddr, logger, func(client *api.Client) (*api.Secret, error) {
-		return authSecret, nil
+	return createClient(vaultAddr, logger, func(client *api.Client) (*api.Secret, string, error) {
+		metadata, err := authSecret.TokenMetadata()
+		return authSecret, metadata["role"], err
 	})
 }
 
-func createClient(vaultAddr string, logger hclog.Logger, auth func(*api.Client) (*api.Secret, error)) (*Client, error) {
+func createClient(vaultAddr string, logger hclog.Logger, auth func(*api.Client) (*api.Secret, string, error)) (*Client, error) {
 	vaultConfig := api.DefaultConfig()
 	if vaultAddr != "" {
 		vaultConfig.Address = vaultAddr
@@ -41,7 +44,7 @@ func createClient(vaultAddr string, logger hclog.Logger, auth func(*api.Client) 
 		return nil, err
 	}
 
-	authSecret, err := auth(client)
+	authSecret, role, err := auth(client)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +61,7 @@ func createClient(vaultAddr string, logger hclog.Logger, auth func(*api.Client) 
 		ApiClient:   client,
 		AuthSecret:  authSecret,
 		authRenewer: renewer,
+		role:        role,
 		doneCh:      make(chan error, 1),
 		logger:      logger,
 	}, err
@@ -117,10 +121,12 @@ func (v *Client) StartAuthRenewal(ctx context.Context) {
 		case err := <-v.authRenewer.DoneCh():
 			v.logger.Info("auth leaese renewer done channel triggered")
 			v.doneCh <- fmt.Errorf("auth lease renewer done: %v", err)
+			prometheus.IncAuthLeaseFailed(v.role)
 			return
 
 		case <-v.authRenewer.RenewCh():
 			v.logger.Info("renewed lease for auth token")
+			prometheus.IncAuthLeaseRenewed(v.role)
 			break
 		}
 	}
@@ -164,11 +170,13 @@ func (v *Client) startRenewal(ctx context.Context, name string, renewer *api.Ren
 
 		case err := <-renewer.DoneCh():
 			v.logger.Info("lease renewer done channel triggered", "name", name)
+			prometheus.IncSecretLeaseFailed(v.role, name)
 			v.doneCh <- fmt.Errorf("lease renewer done: %v", err)
 			return
 
 		case <-renewer.RenewCh():
 			v.logger.Info("renewed lease for secret", "name", name)
+			prometheus.IncSecretLeaseRenewed(v.role, name)
 			break
 		}
 	}
