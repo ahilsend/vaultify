@@ -2,6 +2,7 @@ package vault
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/ahilsend/vaultify/pkg/prometheus"
 	"github.com/hashicorp/go-hclog"
@@ -119,14 +120,24 @@ func (v *Client) StartAuthRenewal(ctx context.Context) {
 			return
 
 		case err := <-v.authRenewer.DoneCh():
-			v.logger.Info("auth leaese renewer done channel triggered")
-			v.doneCh <- fmt.Errorf("auth lease renewer done: %v", err)
 			prometheus.IncAuthLeaseFailed(v.role)
+			v.logger.Warn("auth leaese renewer done channel triggered")
+			v.doneCh <- fmt.Errorf("auth lease renewer done: %v", err)
 			return
 
-		case <-v.authRenewer.RenewCh():
-			v.logger.Info("renewed lease for auth token")
-			prometheus.IncAuthLeaseRenewed(v.role)
+		case renewed := <-v.authRenewer.RenewCh():
+			hasWarnings := len(renewed.Secret.Warnings) > 0
+			prometheus.IncAuthLeaseRenewed(v.role, hasWarnings)
+			if v.logger.IsTrace() {
+				bytes, _ := json.MarshalIndent(renewed.Secret, "", "  ")
+				v.logger.Trace("renewed lease for auth token", "secret", string(bytes))
+			} else {
+				v.logger.Info("renewed lease for auth token", "secret")
+			}
+
+			if hasWarnings {
+				v.logger.Warn("Lease warning", "lease_warning", renewed.Secret.Warnings)
+			}
 			break
 		}
 	}
@@ -169,14 +180,24 @@ func (v *Client) startRenewal(ctx context.Context, name string, renewer *api.Ren
 			return
 
 		case err := <-renewer.DoneCh():
-			v.logger.Info("lease renewer done channel triggered", "name", name)
 			prometheus.IncSecretLeaseFailed(v.role, name)
+			v.logger.Warn("lease renewer done channel triggered", "name", name)
 			v.doneCh <- fmt.Errorf("lease renewer done: %v", err)
 			return
 
-		case <-renewer.RenewCh():
-			v.logger.Info("renewed lease for secret", "name", name)
-			prometheus.IncSecretLeaseRenewed(v.role, name)
+		case renewed := <-renewer.RenewCh():
+			hasWarnings := len(renewed.Secret.Warnings) > 0
+			prometheus.IncSecretLeaseRenewed(v.role, name, hasWarnings)
+			if v.logger.IsTrace() {
+				bytes, _ := json.MarshalIndent(renewed.Secret, "", "  ")
+				v.logger.Trace("renewed lease for secret", "name", name, "secret", string(bytes))
+			} else {
+				v.logger.Info("renewed lease for secret", "name", name)
+			}
+
+			if hasWarnings {
+				v.logger.Warn("Lease warning", "lease_warning", renewed.Secret.Warnings)
+			}
 			break
 		}
 	}

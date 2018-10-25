@@ -2,6 +2,7 @@ package prometheus
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -13,7 +14,7 @@ var (
 			Name: "vaultify_auth_lease_renewed",
 			Help: "Counter for renewed auth leases",
 		},
-		[]string{"role"},
+		[]string{"role", "warnings"},
 	)
 	authLeaseFailed = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -27,7 +28,7 @@ var (
 			Name: "vaultify_secret_lease_renewed",
 			Help: "Counter for renewed secrets leases",
 		},
-		[]string{"role", "secret"},
+		[]string{"role", "secret", "warnings"},
 	)
 	secretLeaseFailed = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -46,9 +47,10 @@ func init() {
 	prometheus.MustRegister(secretLeaseFailed)
 }
 
-func IncAuthLeaseRenewed(role string) {
+func IncAuthLeaseRenewed(role string, hasWarnings bool) {
 	authLeaseRenewed.With(prometheus.Labels{
-		"role": role,
+		"role":     role,
+		"warnings": strconv.FormatBool(hasWarnings),
 	}).Inc()
 }
 
@@ -58,10 +60,11 @@ func IncAuthLeaseFailed(role string) {
 	}).Inc()
 }
 
-func IncSecretLeaseRenewed(role string, secret string) {
+func IncSecretLeaseRenewed(role string, secret string, hasWarnings bool) {
 	secretLeaseRenewed.With(prometheus.Labels{
-		"role":   role,
-		"secret": secret,
+		"role":     role,
+		"secret":   secret,
+		"warnings": strconv.FormatBool(hasWarnings),
 	}).Inc()
 }
 

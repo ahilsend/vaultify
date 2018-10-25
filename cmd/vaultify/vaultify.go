@@ -45,7 +45,7 @@ var (
 			logger.SetLevel(logLevel())
 
 			if err := template.Run(logger, &flags.templateOptions); err != nil {
-				return fmt.Errorf("templating faild: %v", err)
+				return fmt.Errorf("templating failed: %v", err)
 			}
 			fmt.Println("OK")
 			return nil
@@ -66,7 +66,7 @@ var (
 			logger.SetLevel(logLevel())
 
 			if err := leases.Run(logger, &flags.renewLeasesOptions); err != nil {
-				return fmt.Errorf("renew-leases faild: %v", err)
+				return fmt.Errorf("renew-leases failed: %v", err)
 			}
 			return nil
 		},
@@ -86,7 +86,7 @@ var (
 			logger.SetLevel(logLevel())
 
 			if err := run.Run(logger, &flags.runOptions); err != nil {
-				return fmt.Errorf("run faild: %v", err)
+				return fmt.Errorf("run failed: %v", err)
 			}
 			return nil
 		},
