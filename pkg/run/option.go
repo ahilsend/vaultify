@@ -1,9 +1,12 @@
 package run
 
+import (
+	"github.com/ahilsend/vaultify/pkg/options"
+)
+
 // Options customizes the parameters of templating.
 type Options struct {
-	// Vault api address. Can be specified via VAULT_ADDR instead
-	VaultAddress string
+	options.CommonOptions
 	// Kubernetes auth role to use
 	Role string
 

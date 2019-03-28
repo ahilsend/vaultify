@@ -2,10 +2,12 @@ package leases
 
 import (
 	"context"
+
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/ahilsend/vaultify/pkg/prometheus"
 	"github.com/ahilsend/vaultify/pkg/secrets"
 	"github.com/ahilsend/vaultify/pkg/vault"
-	"github.com/hashicorp/go-hclog"
 )
 
 func Run(logger hclog.Logger, options *Options) error {
@@ -14,7 +16,8 @@ func Run(logger hclog.Logger, options *Options) error {
 		return err
 	}
 
-	vaultClient, err := vault.NewClientFromSecret(logger, options.VaultAddress, secretResult.AuthSecret)
+	config := options.VaultApiConfig()
+	vaultClient, err := vault.NewClientFromSecret(logger, secretResult.AuthSecret, config)
 	if err != nil {
 		return err
 	}

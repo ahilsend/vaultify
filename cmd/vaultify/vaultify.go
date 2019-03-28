@@ -3,13 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/ahilsend/vaultify/pkg/run"
 	"os"
+	"time"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/ahilsend/vaultify/pkg/leases"
+	"github.com/ahilsend/vaultify/pkg/options"
+	"github.com/ahilsend/vaultify/pkg/run"
 	"github.com/ahilsend/vaultify/pkg/template"
 )
 
@@ -18,7 +20,7 @@ var (
 
 	flags = struct {
 		logLevel           int
-		vaultAddress       string
+		commonOptions      options.CommonOptions
 		templateOptions    template.Options
 		renewLeasesOptions leases.Options
 		runOptions         run.Options
@@ -36,7 +38,7 @@ var (
 		Short: "Templating without renewing leases.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.templateOptions.VaultAddress = flags.vaultAddress
+			flags.templateOptions.CommonOptions = flags.commonOptions
 
 			if !flags.templateOptions.IsValid() {
 				return cmd.Help()
@@ -52,12 +54,12 @@ var (
 		},
 	}
 
-	reneawLeasesCmd = &cobra.Command{
+	renewLeasesCmd = &cobra.Command{
 		Use:   "renew-leases",
 		Short: "Continuously renews all secret leases",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.renewLeasesOptions.VaultAddress = flags.vaultAddress
+			flags.renewLeasesOptions.CommonOptions = flags.commonOptions
 
 			if !flags.renewLeasesOptions.IsValid() {
 				return cmd.Help()
@@ -77,7 +79,7 @@ var (
 		Short: "Templates a configuration file, and then continuously renews the secret leases. This is combines `template` and `renew-leases`, and does not require writing the lease information to file.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.runOptions.VaultAddress = flags.vaultAddress
+			flags.runOptions.CommonOptions = flags.commonOptions
 
 			if !flags.runOptions.IsValid() {
 				return cmd.Help()
@@ -108,8 +110,37 @@ func logLevel() hclog.Level {
 }
 
 func init() {
-	rootCmd.PersistentFlags().CountVarP(&flags.logLevel, "verbose", "v", "Log level. Defaults to 'error', Set multiple times to increase log level")
-	rootCmd.PersistentFlags().StringVar(&flags.vaultAddress, "vault", "", "Vault address. Can be specified via VAULT_ADDR instead")
+	rootCmd.PersistentFlags().CountVarP(
+		&flags.logLevel,
+		"verbose",
+		"v",
+		"Log level. Defaults to 'error', Set multiple times to increase log level")
+	rootCmd.PersistentFlags().StringVar(
+		&flags.commonOptions.VaultAddress,
+		"vault",
+		"",
+		"Vault address. Can be specified via VAULT_ADDR instead")
+	rootCmd.PersistentFlags().DurationVar(
+		&flags.commonOptions.Timeout,
+		"timeout",
+		time.Minute,
+		"Timeout for requests. Can be specified via VAULT_CLIENT_TIMEOUT instead")
+	rootCmd.PersistentFlags().IntVar(
+		&flags.commonOptions.MaxRetries,
+		"max-retries",
+		20,
+		"Max retries for requests. Can be specified via VAULT_MAX_RETRIES instead")
+	rootCmd.PersistentFlags().IntVar(
+		&flags.commonOptions.RateLimitBurst,
+		"rate-limit-burst",
+		2,
+		"Rate limiting of requests, perform max X bursts")
+	rootCmd.PersistentFlags().DurationVar(
+		&flags.commonOptions.RateLimit,
+		"rate-limit",
+		30 * time.Second,
+		"Rate limiting of requests, perform burst every X duration")
+
 	flag.CommandLine.VisitAll(func(gf *flag.Flag) {
 		rootCmd.PersistentFlags().AddGoFlag(gf)
 	})
@@ -120,9 +151,9 @@ func init() {
 	templateCmd.Flags().StringVar(&flags.templateOptions.SecretsOutputFileName, "secrets-output-file", "", "Secrets output file")
 	templateCmd.Flags().StringToStringVar(&flags.templateOptions.Variables, "var", map[string]string{}, "Variables to use instead of fetching secrets from vault. Does not require vault, this is for testing the templating only.")
 
-	reneawLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.SecretsFileName, "secrets-file", "", "Secrets file")
-	reneawLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.MetricsAddress, "metrics-address", ":9105", "Metrics address")
-	reneawLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.MetricsPath, "metrics-path", "/metrics", "Metrics path")
+	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.SecretsFileName, "secrets-file", "", "Secrets file")
+	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.MetricsAddress, "metrics-address", ":9105", "Metrics address")
+	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.MetricsPath, "metrics-path", "/metrics", "Metrics path")
 
 	runCmd.Flags().StringVar(&flags.runOptions.Role, "role", "", "Vault kubernetes role to assume")
 	runCmd.Flags().StringVar(&flags.runOptions.TemplateFileName, "template-file", "", "Template file to render")
@@ -131,7 +162,7 @@ func init() {
 	runCmd.Flags().StringVar(&flags.runOptions.MetricsPath, "metrics-path", "/metrics", "Metrics path")
 
 	rootCmd.AddCommand(templateCmd)
-	rootCmd.AddCommand(reneawLeasesCmd)
+	rootCmd.AddCommand(renewLeasesCmd)
 	rootCmd.AddCommand(runCmd)
 }
 

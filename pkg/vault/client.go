@@ -20,25 +20,22 @@ type Client struct {
 	logger      hclog.Logger
 }
 
-func NewClient(logger hclog.Logger, vaultAddr string, role string) (*Client, error) {
-	return createClient(vaultAddr, logger, func(client *api.Client) (*api.Secret, string, error) {
+func NewClient(logger hclog.Logger, role string, config *api.Config) (*Client, error) {
+	return createClient(logger, func(client *api.Client) (*api.Secret, string, error) {
 		authSecret, err := kubernetesAuthentication(client, logger, role)
 		return authSecret, role, err
-	})
+	}, config)
 }
 
-func NewClientFromSecret(logger hclog.Logger, vaultAddr string, authSecret *api.Secret) (*Client, error) {
-	return createClient(vaultAddr, logger, func(client *api.Client) (*api.Secret, string, error) {
+func NewClientFromSecret(logger hclog.Logger, authSecret *api.Secret, config *api.Config) (*Client, error) {
+	return createClient(logger, func(client *api.Client) (*api.Secret, string, error) {
 		metadata, err := authSecret.TokenMetadata()
 		return authSecret, metadata["role"], err
-	})
+	}, config)
 }
 
-func createClient(vaultAddr string, logger hclog.Logger, auth func(*api.Client) (*api.Secret, string, error)) (*Client, error) {
-	vaultConfig := api.DefaultConfig()
-	if vaultAddr != "" {
-		vaultConfig.Address = vaultAddr
-	}
+func createClient(logger hclog.Logger, auth func(*api.Client) (*api.Secret, string, error), config *api.Config) (*Client, error) {
+	vaultConfig := mergeConfig(api.DefaultConfig(), config)
 
 	client, err := api.NewClient(vaultConfig)
 	if err != nil {
@@ -66,6 +63,32 @@ func createClient(vaultAddr string, logger hclog.Logger, auth func(*api.Client) 
 		doneCh:      make(chan error, 1),
 		logger:      logger,
 	}, err
+}
+
+func mergeConfig(vaultConfig *api.Config, config *api.Config) *api.Config {
+	if config.Address != "" {
+		vaultConfig.Address = config.Address
+	}
+	if config.HttpClient != nil {
+		vaultConfig.HttpClient = config.HttpClient
+	}
+	if config.MaxRetries != 0 {
+		vaultConfig.MaxRetries = config.MaxRetries
+	}
+	if config.Timeout != 0 {
+		vaultConfig.Timeout = config.Timeout
+	}
+	if config.Error != nil {
+		vaultConfig.Error = config.Error
+	}
+	if config.Backoff != nil {
+		vaultConfig.Backoff = config.Backoff
+	}
+	if config.Limiter != nil {
+		vaultConfig.Limiter = config.Limiter
+	}
+
+	return vaultConfig
 }
 
 func kubernetesAuthentication(v *api.Client, logger hclog.Logger, role string) (*api.Secret, error) {
