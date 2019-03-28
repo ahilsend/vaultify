@@ -57,7 +57,8 @@ func createSecretReader(logger hclog.Logger, options *Options) (secrets.SecretRe
 		return secrets.NewMapReader(values), nil
 	}
 
-	vaultClient, err := vault.NewClient(logger, options.VaultAddress, options.Role)
+	config := options.VaultApiConfig()
+	vaultClient, err := vault.NewClient(logger, options.Role, config)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,8 @@ import (
 )
 
 func Run(logger hclog.Logger, options *Options) error {
-	vaultClient, err := vault.NewClient(logger, options.VaultAddress, options.Role)
+	config := options.VaultApiConfig()
+	vaultClient, err := vault.NewClient(logger, options.Role, config)
 	if err != nil {
 		return err
 	}
