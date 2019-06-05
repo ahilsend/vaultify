@@ -155,7 +155,7 @@ func (v *Client) StartAuthRenewal(ctx context.Context) {
 				bytes, _ := json.MarshalIndent(renewed.Secret, "", "  ")
 				v.logger.Trace("renewed lease for auth token", "secret", string(bytes))
 			} else {
-				v.logger.Info("renewed lease for auth token", "secret")
+				v.logger.Info("renewed lease for auth token")
 			}
 
 			if hasWarnings {
@@ -213,9 +213,16 @@ func (v *Client) startRenewal(ctx context.Context, name string, renewer *api.Ren
 			prometheus.IncSecretLeaseRenewed(v.role, name, hasWarnings)
 			if v.logger.IsTrace() {
 				bytes, _ := json.MarshalIndent(renewed.Secret, "", "  ")
-				v.logger.Trace("renewed lease for secret", "name", name, "secret", string(bytes))
+				v.logger.Trace("renewed lease for secret",
+					"name", name,
+					"secret", string(bytes))
+			} else if v.logger.IsDebug() {
+				v.logger.Debug("renewed lease for secret",
+					"name", name,
+					"leaseId", renewed.Secret.LeaseID)
 			} else {
-				v.logger.Info("renewed lease for secret", "name", name)
+				v.logger.Info("renewed lease for secret",
+					"name", name)
 			}
 
 			if hasWarnings {
