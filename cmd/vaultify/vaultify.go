@@ -138,7 +138,7 @@ func init() {
 	rootCmd.PersistentFlags().DurationVar(
 		&flags.commonOptions.RateLimit,
 		"rate-limit",
-		30 * time.Second,
+		30*time.Second,
 		"Rate limiting of requests, perform burst every X duration")
 
 	flag.CommandLine.VisitAll(func(gf *flag.Flag) {

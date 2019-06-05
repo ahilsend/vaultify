@@ -2,13 +2,23 @@ package prometheus
 
 import (
 	"net/http"
+	"runtime"
 	"strconv"
+
+	"github.com/ahilsend/vaultify/pkg"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
+	buildInfo = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "vaultify_build_info",
+			Help: "Build information like version and commit",
+		},
+		[]string{"version", "goversion", "commit_hash"},
+	)
 	authLeaseRenewed = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "vaultify_auth_lease_renewed",
@@ -41,10 +51,17 @@ var (
 
 func init() {
 	// Register the metrics
+	prometheus.MustRegister(buildInfo)
 	prometheus.MustRegister(authLeaseRenewed)
 	prometheus.MustRegister(authLeaseFailed)
 	prometheus.MustRegister(secretLeaseRenewed)
 	prometheus.MustRegister(secretLeaseFailed)
+
+	buildInfo.With(prometheus.Labels{
+		"version":     pkg.Version,
+		"commit_hash": pkg.CommitHash,
+		"goversion":   runtime.Version(),
+	}).Inc()
 }
 
 func IncAuthLeaseRenewed(role string, hasWarnings bool) {
