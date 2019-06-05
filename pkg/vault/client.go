@@ -172,8 +172,10 @@ func (v *Client) RenewLeases(ctx context.Context, secretMap map[string]api.Secre
 			continue
 		}
 
+		// local copy of secret or the reference to it will be incorrect
+		renewerSecret := secret
 		renewer, err := v.ApiClient.NewRenewer(&api.RenewerInput{
-			Secret: &secret,
+			Secret: &renewerSecret,
 		})
 		if err != nil {
 			v.doneCh <- err
