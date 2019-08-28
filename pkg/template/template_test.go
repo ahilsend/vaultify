@@ -2,7 +2,6 @@ package template
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -31,9 +30,7 @@ credentials:
 			"attribute2": "value2",
 		},
 	})
-	if err := renderAndCompare(secretReader, input, expectedOutput); err != nil {
-		t.Fatal(err)
-	}
+	renderAndCompare(t, secretReader, input, expectedOutput)
 }
 
 func TestRenderDefault(t *testing.T) {
@@ -55,22 +52,19 @@ credentials:
 			"attribute1": 1,
 		},
 	})
-	if err := renderAndCompare(secretReader, input, expectedOutput); err != nil {
-		t.Fatal(err)
-	}
+	renderAndCompare(t, secretReader, input, expectedOutput)
 }
 
-func renderAndCompare(secretReader secrets.SecretReader, input string, expectedOutput string) error {
+func renderAndCompare(t *testing.T, secretReader secrets.SecretReader, input string, expectedOutput string) {
 	template := New(hclog.Default(), secretReader)
 
 	output := new(bytes.Buffer)
 	if err := template.render(strings.NewReader(input), output); err != nil {
-		return err
+		t.Fatal(err)
 	}
 	actualResult := output.String()
 
 	if actualResult != expectedOutput {
-		return fmt.Errorf("expected %s but got %s", expectedOutput, actualResult)
+		t.Fatalf("expected %s but got %s", expectedOutput, actualResult)
 	}
-	return nil
 }
