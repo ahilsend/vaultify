@@ -9,6 +9,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
+	"path/filepath"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -119,6 +121,49 @@ func (t *VaultifyTemplate) RenderToFile(templateFile string, outputFile string) 
 	err = t.render(bytes.NewBuffer(templateBytes), output)
 	if err != nil {
 		t.logger.Error("Error during rendering", "error", err)
+		return nil, err
+	}
+
+	return t.secrets, nil
+}
+
+func (t *VaultifyTemplate) RenderToDirectory(templateDir string, outputDir string) (*secrets.Secrets, error) {
+	t.logger.Info("Rendering template directory", "directory", templateDir)
+
+	err := filepath.Walk(templateDir, func(templateFile string, info os.FileInfo, err error) error {
+		if err != nil {
+			t.logger.Error("Error visiting path", "path", templateFile, "error", err)
+			return err
+		}
+
+		relativePath, err := filepath.Rel(templateDir, templateFile)
+		if err != nil {
+			t.logger.Error("Path not relative to templateDir", "path", templateFile, "templateDir", templateDir, "error", err)
+			return err
+		}
+		outputPath := path.Join(outputDir, relativePath)
+
+		if info.IsDir() {
+			t.logger.Info("Creating directory", "directory", outputPath)
+			// TODO: need to be writable while rendering templates but could
+			// probably be restored afterwards.
+			if err := os.MkdirAll(outputPath, info.Mode().Perm()|0700); err != nil {
+				t.logger.Error("Failed to create output directory structure", "outputPath", outputPath)
+				return err
+			}
+			return nil
+		}
+
+		_, err = t.RenderToFile(templateFile, outputPath)
+		err = nil
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return nil, err
 	}
 
