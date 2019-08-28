@@ -64,7 +64,7 @@ func renderAndCompare(secretReader secrets.SecretReader, input string, expectedO
 	template := New(hclog.Default(), secretReader)
 
 	output := new(bytes.Buffer)
-	if _, err := template.render(strings.NewReader(input), output); err != nil {
+	if err := template.render(strings.NewReader(input), output); err != nil {
 		return err
 	}
 	actualResult := output.String()
