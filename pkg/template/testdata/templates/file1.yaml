@@ -1,0 +1,4 @@
+credentials:
+  <{- $mySecret := vault "secret/my/key" }>
+  attribute1: <{ $mySecret.Data.attribute1 }>
+  attribute2: <{ $mySecret.Data.attribute2 }>
