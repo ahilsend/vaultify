@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -95,6 +96,49 @@ func compareFile(t *testing.T, expectedFilePath, actualFilePath string) {
 
 	if string(expected) != string(actual) {
 		t.Errorf("[%s] expected %s but got %s", expectedFilePath, expected, actual)
+	}
+}
+
+func TestRenderToDirectory(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	secretReader := secrets.NewMapReader(secrets.MapSecrets{
+		"secret/my/key": {
+			"attribute1": "value1",
+			"attribute2": "value2",
+		},
+		"secret/my/other-key": {
+			"attribute1": "value3",
+		},
+		"secret/my/unused-key": {
+			"attribute1": "value4",
+		},
+	})
+	template := New(hclog.Default(), secretReader)
+
+	secrets, err := template.RenderToDirectory("testdata/templates", tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkExpectedSecrets(t, secrets, []string{"secret/my/key", "secret/my/other-key"})
+
+	os.Chdir("testdata/expected")
+	err = filepath.Walk(".", func(file string, info os.FileInfo, err error) error {
+		if err != nil {
+			t.Fatal(err)
+		}
+		if info.IsDir() {
+			return nil
+		}
+		compareFile(t, file, path.Join(tmpDir, file))
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
