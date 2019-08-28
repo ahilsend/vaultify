@@ -83,7 +83,12 @@ func (t *VaultifyTemplate) getVaultSecret(name string) (*secrets.Secret, error) 
 		return nil, errors.New("you need to pass a name to the 'vault' function")
 	}
 
-	return t.secretReader.Get(name)
+	secret, err := t.secretReader.Get(name)
+	if err != nil {
+		return nil, err
+	}
+	t.secrets.Secrets[name] = *secret
+	return secret, err
 }
 
 func (t *VaultifyTemplate) RenderToFile(templateFile string, outputFile string) (*secrets.Secrets, error) {
@@ -124,16 +129,7 @@ func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) error {
 	tmpl := template.New(templateName)
 	tmpl.Delims("<{", "}>")
 	funcMap := sprig.GenericFuncMap()
-	funcMap["vault"] = func(name string) (*secrets.Secret, error) {
-		secret, err := t.getVaultSecret(name)
-		if err != nil {
-			return nil, err
-		}
-
-		t.secrets.Secrets[name] = *secret
-
-		return secret, err
-	}
+	funcMap["vault"] = t.getVaultSecret
 	tmpl.Funcs(funcMap)
 
 	_, err = tmpl.Parse(string(inputBytes))
