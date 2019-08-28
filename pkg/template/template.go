@@ -23,6 +23,7 @@ const (
 type VaultifyTemplate struct {
 	secretReader secrets.SecretReader
 	logger       hclog.Logger
+	secrets      *secrets.Secrets
 }
 
 func Run(logger hclog.Logger, options *Options) error {
@@ -70,6 +71,10 @@ func New(logger hclog.Logger, secretReader secrets.SecretReader) *VaultifyTempla
 	return &VaultifyTemplate{
 		secretReader: secretReader,
 		logger:       logger,
+		secrets: &secrets.Secrets{
+			AuthSecret: secretReader.GetAuthSecret(),
+			Secrets:    map[string]secrets.Secret{},
+		},
 	}
 }
 
@@ -101,25 +106,21 @@ func (t *VaultifyTemplate) RenderToFile(templateFile string, outputFile string) 
 		output = file
 	}
 
-	resultSecrets, err := t.render(bytes.NewBuffer(templateBytes), output)
+	err = t.render(bytes.NewBuffer(templateBytes), output)
 	if err != nil {
 		t.logger.Error("Error during rendering", "error", err)
 		return nil, err
 	}
 
-	return resultSecrets, nil
+	return t.secrets, nil
 }
 
-func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) (*secrets.Secrets, error) {
+func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) error {
 	inputBytes, err := ioutil.ReadAll(input)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	result := secrets.Secrets{
-		AuthSecret: t.secretReader.GetAuthSecret(),
-		Secrets:    map[string]secrets.Secret{},
-	}
 	tmpl := template.New(templateName)
 	tmpl.Delims("<{", "}>")
 	funcMap := sprig.GenericFuncMap()
@@ -129,7 +130,7 @@ func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) (*secrets.S
 			return nil, err
 		}
 
-		result.Secrets[name] = *secret
+		t.secrets.Secrets[name] = *secret
 
 		return secret, err
 	}
@@ -137,13 +138,13 @@ func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) (*secrets.S
 
 	_, err = tmpl.Parse(string(inputBytes))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = tmpl.Execute(output, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &result, nil
+	return nil
 }
