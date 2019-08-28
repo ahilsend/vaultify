@@ -2,6 +2,9 @@ package template
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
+	"path"
 	"strings"
 	"testing"
 
@@ -53,6 +56,46 @@ credentials:
 		},
 	})
 	renderAndCompare(t, secretReader, input, expectedOutput, []string{"secret/my/key"})
+}
+
+func TestRenderToFile(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	secretReader := secrets.NewMapReader(secrets.MapSecrets{
+		"secret/my/key": {
+			"attribute1": "value1",
+			"attribute2": "value2",
+		},
+	})
+	template := New(hclog.Default(), secretReader)
+
+	dstFile := path.Join(tmpDir, "file1.yaml")
+	secrets, err := template.RenderToFile("testdata/templates/file1.yaml", dstFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkExpectedSecrets(t, secrets, []string{"secret/my/key"})
+	compareFile(t, "testdata/expected/file1.yaml", dstFile)
+}
+
+func compareFile(t *testing.T, expectedFilePath, actualFilePath string) {
+	expected, err := ioutil.ReadFile(expectedFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actual, err := ioutil.ReadFile(actualFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(expected) != string(actual) {
+		t.Errorf("[%s] expected %s but got %s", expectedFilePath, expected, actual)
+	}
 }
 
 func checkExpectedSecrets(t *testing.T, secrets *secrets.Secrets, expectedSecrets []string) {
