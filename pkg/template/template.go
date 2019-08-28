@@ -23,6 +23,7 @@ const (
 type VaultifyTemplate struct {
 	secretReader secrets.SecretReader
 	logger       hclog.Logger
+	funcMap      map[string]interface{}
 	secrets      *secrets.Secrets
 }
 
@@ -68,14 +69,18 @@ func createSecretReader(logger hclog.Logger, options *Options) (secrets.SecretRe
 }
 
 func New(logger hclog.Logger, secretReader secrets.SecretReader) *VaultifyTemplate {
-	return &VaultifyTemplate{
+	t := &VaultifyTemplate{
 		secretReader: secretReader,
 		logger:       logger,
+		funcMap:      sprig.GenericFuncMap(),
 		secrets: &secrets.Secrets{
 			AuthSecret: secretReader.GetAuthSecret(),
 			Secrets:    map[string]secrets.Secret{},
 		},
 	}
+
+	t.funcMap["vault"] = t.getVaultSecret
+	return t
 }
 
 func (t *VaultifyTemplate) getVaultSecret(name string) (*secrets.Secret, error) {
@@ -128,9 +133,7 @@ func (t *VaultifyTemplate) render(input io.Reader, output io.Writer) error {
 
 	tmpl := template.New(templateName)
 	tmpl.Delims("<{", "}>")
-	funcMap := sprig.GenericFuncMap()
-	funcMap["vault"] = t.getVaultSecret
-	tmpl.Funcs(funcMap)
+	tmpl.Funcs(t.funcMap)
 
 	_, err = tmpl.Parse(string(inputBytes))
 	if err != nil {
