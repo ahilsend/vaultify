@@ -146,8 +146,10 @@ func init() {
 	})
 
 	templateCmd.Flags().StringVar(&flags.templateOptions.Role, "role", "", "Vault kubernetes role to assume")
-	templateCmd.Flags().StringVar(&flags.templateOptions.TemplateFileName, "template-file", "", "Template file to render")
-	templateCmd.Flags().StringVar(&flags.templateOptions.OutputFileName, "output-file", "", "Output file")
+	templateCmd.Flags().StringVar(&flags.templateOptions.TemplateFileName, "template-file", "", "(DEPRECATED) Template file to render, use template-path instead")
+	templateCmd.Flags().StringVar(&flags.templateOptions.OutputPath, "output-file", "", "(DEPRECATED) Output file, use output-path instead")
+	templateCmd.Flags().StringVar(&flags.templateOptions.TemplatePath, "template-path", "", "Template path to render file or files from directory")
+	templateCmd.Flags().StringVar(&flags.templateOptions.OutputPath, "output-path", "", "Output path")
 	templateCmd.Flags().StringVar(&flags.templateOptions.SecretsOutputFileName, "secrets-output-file", "", "Secrets output file")
 	templateCmd.Flags().StringToStringVar(&flags.templateOptions.Variables, "var", map[string]string{}, "Variables to use instead of fetching secrets from vault. Does not require vault, this is for testing the templating only.")
 

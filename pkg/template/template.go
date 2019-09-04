@@ -36,7 +36,21 @@ func Run(logger hclog.Logger, options *Options) error {
 	}
 
 	vaultTemplate := New(logger, secretReader)
-	resultSecrets, err := vaultTemplate.RenderToFile(options.TemplateFileName, options.OutputFileName)
+
+	var resultSecrets *secrets.Secrets
+	file, err := os.Stat(options.TemplatePath)
+	if err != nil {
+		return err
+	}
+
+	if file.Mode().IsRegular() {
+		resultSecrets, err = vaultTemplate.RenderToFile(options.TemplatePath, options.OutputPath)
+	} else if file.Mode().IsDir() {
+		resultSecrets, err = vaultTemplate.RenderToDirectory(options.TemplatePath, options.OutputPath)
+	} else {
+		return errors.New("Path is not a file or a directory")
+	}
+
 	if err != nil {
 		return err
 	}
