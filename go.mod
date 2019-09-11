@@ -1,5 +1,7 @@
 module github.com/ahilsend/vaultify
 
+go 1.13
+
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.8 // indirect
 	github.com/Azure/azure-sdk-for-go v26.7.0+incompatible // indirect
@@ -100,3 +102,7 @@ require (
 	layeh.com/radius v0.0.0-20190322222518-890bc1058917 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
+
+replace git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999 => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999
+
+replace git.apache.org/thrift.git v0.0.0-20181218151757-9b75e4fe745a => github.com/apache/thrift v0.0.0-20181218151757-9b75e4fe745a
