@@ -24,13 +24,12 @@ func Run(logger hclog.Logger, options *Options) error {
 
 	secretReader := secrets.NewVaultReader(vaultClient)
 	vaultTemplate := template.New(logger, secretReader)
-
-	secretMap, err := vaultTemplate.RenderToFile(options.TemplateFileName, options.OutputFileName)
+	resultSecrets, err := vaultTemplate.RenderToPath(options.CommonTemplateOptions)
 	if err != nil {
 		return err
 	}
 
-	go vaultClient.RenewLeases(ctx, secretMap.Secrets)
+	go vaultClient.RenewLeases(ctx, resultSecrets.Secrets)
 
 	return vaultClient.Wait(ctx)
 }

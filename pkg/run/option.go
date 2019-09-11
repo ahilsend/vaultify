@@ -7,13 +7,7 @@ import (
 // Options customizes the parameters of templating.
 type Options struct {
 	options.CommonOptions
-	// Kubernetes auth role to use
-	Role string
-
-	// Template file to be rendered
-	TemplateFileName string
-	// Location of the output file
-	OutputFileName string
+	options.CommonTemplateOptions
 
 	// Address to use to expose metrics
 	MetricsAddress string
@@ -23,10 +17,11 @@ type Options struct {
 
 // IsValid returns true if some values are filled into the options.
 func (o *Options) IsValid() bool {
-	return o != nil &&
-		o.Role != "" &&
-		o.TemplateFileName != "" &&
-		o.OutputFileName != "" &&
+	if o == nil {
+		return false
+	}
+
+	return o.CommonTemplateOptions.IsValid() &&
 		o.MetricsAddress != "" &&
 		o.MetricsPath != ""
 }
