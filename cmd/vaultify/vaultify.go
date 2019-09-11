@@ -19,11 +19,12 @@ var (
 	logger = hclog.Default()
 
 	flags = struct {
-		logLevel           int
-		commonOptions      options.CommonOptions
-		templateOptions    template.Options
-		renewLeasesOptions leases.Options
-		runOptions         run.Options
+		logLevel              int
+		commonOptions         options.CommonOptions
+		commomTemplateOptions options.CommonTemplateOptions
+		templateOptions       template.Options
+		renewLeasesOptions    leases.Options
+		runOptions            run.Options
 	}{}
 
 	rootCmd = &cobra.Command{
@@ -39,6 +40,7 @@ var (
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.templateOptions.CommonOptions = flags.commonOptions
+			flags.templateOptions.CommonTemplateOptions = flags.commomTemplateOptions
 
 			if !flags.templateOptions.IsValid() {
 				return cmd.Help()
@@ -80,6 +82,7 @@ var (
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.runOptions.CommonOptions = flags.commonOptions
+			flags.runOptions.CommonTemplateOptions = flags.commomTemplateOptions
 
 			if !flags.runOptions.IsValid() {
 				return cmd.Help()
@@ -145,21 +148,22 @@ func init() {
 		rootCmd.PersistentFlags().AddGoFlag(gf)
 	})
 
-	templateCmd.Flags().StringVar(&flags.templateOptions.Role, "role", "", "Vault kubernetes role to assume")
-	templateCmd.Flags().StringVar(&flags.templateOptions.TemplateFileName, "template-file", "", "(DEPRECATED) Template file to render, use template-path instead")
-	templateCmd.Flags().StringVar(&flags.templateOptions.OutputPath, "output-file", "", "(DEPRECATED) Output file, use output-path instead")
-	templateCmd.Flags().StringVar(&flags.templateOptions.TemplatePath, "template-path", "", "Template path to render file or files from directory")
-	templateCmd.Flags().StringVar(&flags.templateOptions.OutputPath, "output-path", "", "Output path")
+	templatingCmds := []*cobra.Command{templateCmd, runCmd}
+	for _, cmd := range templatingCmds {
+		cmd.Flags().StringVar(&flags.commomTemplateOptions.Role, "role", "", "Vault kubernetes role to assume")
+		cmd.Flags().StringVar(&flags.commomTemplateOptions.TemplateFileName, "template-file", "", "(DEPRECATED) Template file to render, use template-path instead")
+		cmd.Flags().StringVar(&flags.commomTemplateOptions.OutputPath, "output-file", "", "(DEPRECATED) Output file, use output-path instead")
+		cmd.Flags().StringVar(&flags.commomTemplateOptions.TemplatePath, "template-path", "", "Template path to render file or files from directory")
+		cmd.Flags().StringVar(&flags.commomTemplateOptions.OutputPath, "output-path", "", "Output path")
+	}
+
 	templateCmd.Flags().StringVar(&flags.templateOptions.SecretsOutputFileName, "secrets-output-file", "", "Secrets output file")
-	templateCmd.Flags().StringToStringVar(&flags.templateOptions.Variables, "var", map[string]string{}, "Variables to use instead of fetching secrets from vault. Does not require vault, this is for testing the templating only.")
+	templateCmd.Flags().StringToStringVar(&flags.commomTemplateOptions.Variables, "var", map[string]string{}, "Variables to use instead of fetching secrets from vault. Does not require vault, this is for testing the templating only.")
 
 	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.SecretsFileName, "secrets-file", "", "Secrets file")
 	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.MetricsAddress, "metrics-address", ":9105", "Metrics address")
 	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.MetricsPath, "metrics-path", "/metrics", "Metrics path")
 
-	runCmd.Flags().StringVar(&flags.runOptions.Role, "role", "", "Vault kubernetes role to assume")
-	runCmd.Flags().StringVar(&flags.runOptions.TemplateFileName, "template-file", "", "Template file to render")
-	runCmd.Flags().StringVar(&flags.runOptions.OutputFileName, "output-file", "", "Output file")
 	runCmd.Flags().StringVar(&flags.runOptions.MetricsAddress, "metrics-address", ":9105", "Metrics address")
 	runCmd.Flags().StringVar(&flags.runOptions.MetricsPath, "metrics-path", "/metrics", "Metrics path")
 

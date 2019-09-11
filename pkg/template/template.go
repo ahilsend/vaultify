@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/ahilsend/vaultify/pkg/vault"
-	"github.com/hashicorp/go-hclog"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,8 +12,11 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
+	"github.com/hashicorp/go-hclog"
 
+	"github.com/ahilsend/vaultify/pkg/options"
 	"github.com/ahilsend/vaultify/pkg/secrets"
+	"github.com/ahilsend/vaultify/pkg/vault"
 )
 
 const (
@@ -36,21 +37,7 @@ func Run(logger hclog.Logger, options *Options) error {
 	}
 
 	vaultTemplate := New(logger, secretReader)
-
-	var resultSecrets *secrets.Secrets
-	file, err := os.Stat(options.TemplatePath)
-	if err != nil {
-		return err
-	}
-
-	if file.Mode().IsRegular() {
-		resultSecrets, err = vaultTemplate.RenderToFile(options.TemplatePath, options.OutputPath)
-	} else if file.Mode().IsDir() {
-		resultSecrets, err = vaultTemplate.RenderToDirectory(options.TemplatePath, options.OutputPath)
-	} else {
-		return errors.New("Path is not a file or a directory")
-	}
-
+	resultSecrets, err := vaultTemplate.RenderToPath(options.CommonTemplateOptions)
 	if err != nil {
 		return err
 	}
@@ -110,6 +97,20 @@ func (t *VaultifyTemplate) getVaultSecret(name string) (*secrets.Secret, error) 
 	}
 	t.secrets.Secrets[name] = *secret
 	return secret, err
+}
+
+func (t *VaultifyTemplate) RenderToPath(options options.CommonTemplateOptions) (*secrets.Secrets, error) {
+	file, err := os.Stat(options.TemplatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if file.Mode().IsRegular() {
+		return t.RenderToFile(options.TemplatePath, options.OutputPath)
+	} else if file.Mode().IsDir() {
+		return t.RenderToDirectory(options.TemplatePath, options.OutputPath)
+	}
+	return nil, errors.New("Path is not a file or a directory")
 }
 
 func (t *VaultifyTemplate) RenderToFile(templateFile string, outputFile string) (*secrets.Secrets, error) {
