@@ -167,12 +167,26 @@ func (t *VaultifyTemplate) RenderToDirectory(templateDir string, outputDir strin
 				return err
 			}
 			return nil
-		}
 
-		_, err = t.RenderToFile(templateFile, outputPath)
-		err = nil
-		if err != nil {
-			return err
+		} else if info.Mode()&os.ModeSymlink != 0 {
+			t.logger.Info("Creating symlink", "symlink", outputPath)
+			link, err := os.Readlink(templateFile)
+			if err != nil {
+				t.logger.Error("Failed to read symlink", "symlink", templateFile)
+				return err
+			}
+
+			if err := os.Symlink(link, outputPath); err != nil {
+				t.logger.Error("Failed to create symlink", "outputPath", outputPath)
+				return err
+			}
+			return nil
+
+		} else if info.Mode().IsRegular() {
+			_, err = t.RenderToFile(templateFile, outputPath)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
