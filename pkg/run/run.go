@@ -9,6 +9,7 @@ import (
 	"github.com/ahilsend/vaultify/pkg/secrets"
 	"github.com/ahilsend/vaultify/pkg/template"
 	"github.com/ahilsend/vaultify/pkg/vault"
+	"github.com/ahilsend/vaultify/pkg/http"
 )
 
 func Run(logger hclog.Logger, options *Options) error {
@@ -19,7 +20,9 @@ func Run(logger hclog.Logger, options *Options) error {
 	}
 
 	ctx := context.Background()
-	go prometheus.StartServer(options.MetricsAddress, options.MetricsPath)
+
+	prometheus.RegisterHandler(options.MetricsPath)
+	go http.Serve(options.MetricsAddress)
 	go vaultClient.StartAuthRenewal(ctx)
 
 	secretReader := secrets.NewVaultReader(vaultClient)
