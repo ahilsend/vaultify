@@ -1,7 +1,7 @@
 package pkg
 
 const (
-	Version = "0.3.1"
+	Version = "0.4.0"
 )
 
 var (
