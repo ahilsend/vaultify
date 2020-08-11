@@ -92,8 +92,6 @@ func IncSecretLeaseFailed(role string, secret string) {
 	}).Inc()
 }
 
-func StartServer(metricsAddr string, metricsPath string) error {
-
+func RegisterHandler(metricsPath string)  {
 	http.Handle(metricsPath, promhttp.Handler())
-	return http.ListenAndServe(metricsAddr, nil)
 }

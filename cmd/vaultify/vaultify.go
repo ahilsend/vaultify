@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/spf13/pflag"
 	"os"
 	"time"
 
@@ -161,8 +162,16 @@ func init() {
 	templateCmd.Flags().StringToStringVar(&flags.commomTemplateOptions.Variables, "var", map[string]string{}, "Variables to use instead of fetching secrets from vault. Does not require vault, this is for testing the templating only.")
 
 	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.SecretsFileName, "secrets-file", "", "Secrets file")
-	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.MetricsAddress, "metrics-address", ":9105", "Metrics address")
+	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.ListenAddress, "listen-address", ":9105", "Listen address for metrics, and the /healthz and /readyz endpoints. --metrics-address is aliased to this flag.")
 	renewLeasesCmd.Flags().StringVar(&flags.renewLeasesOptions.MetricsPath, "metrics-path", "/metrics", "Metrics path")
+	renewLeasesCmd.Flags().SetNormalizeFunc(func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		switch name {
+		case "metrics-address":
+			name = "listen-address"
+			break
+		}
+		return pflag.NormalizedName(name)
+	})
 
 	runCmd.Flags().StringVar(&flags.runOptions.MetricsAddress, "metrics-address", ":9105", "Metrics address")
 	runCmd.Flags().StringVar(&flags.runOptions.MetricsPath, "metrics-path", "/metrics", "Metrics path")

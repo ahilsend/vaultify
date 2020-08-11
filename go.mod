@@ -80,6 +80,7 @@ require (
 	github.com/samuel/go-zookeeper v0.0.0-20180130194729-c4fab1ac1bec // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spf13/cobra v0.0.3
+	github.com/spf13/pflag v1.0.3
 	github.com/streadway/amqp v0.0.0-20190312223743-14f78b41ce6d // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/ugorji/go/codec v0.0.0-20190320090025-2dc34c0b8780 // indirect
@@ -99,6 +100,8 @@ require (
 	k8s.io/api v0.0.0-20190313115550-3c12c96769cc // indirect
 	k8s.io/apimachinery v0.0.0-20190323104403-03ac7a9ade42 // indirect
 	k8s.io/klog v0.2.0 // indirect
+	labix.org/v2/mgo v0.0.0-20140701140051-000000000287 // indirect
+	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 	layeh.com/radius v0.0.0-20190322222518-890bc1058917 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )

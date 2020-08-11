@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
+	"github.com/ahilsend/vaultify/pkg/http"
 	"github.com/ahilsend/vaultify/pkg/prometheus"
 	"github.com/ahilsend/vaultify/pkg/secrets"
 	"github.com/ahilsend/vaultify/pkg/vault"
@@ -23,7 +24,9 @@ func Run(logger hclog.Logger, options *Options) error {
 	}
 
 	ctx := context.Background()
-	go prometheus.StartServer(options.MetricsAddress, options.MetricsPath)
+
+	prometheus.RegisterHandler(options.MetricsPath)
+	go http.Serve(options.ListenAddress)
 	go vaultClient.StartAuthRenewal(ctx)
 	go vaultClient.RenewLeases(ctx, secretResult.Secrets)
 

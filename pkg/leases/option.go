@@ -11,8 +11,9 @@ type Options struct {
 	// Secrets file location, where the secret leases are stored
 	SecretsFileName string
 
-	// Address to use to expose metrics
-	MetricsAddress string
+	// Address to use to expose metrics (path configured with MetricsPath).
+	// The /healthz and /readyz endpoints will also be exposed on this address.
+	ListenAddress string
 	// Path to use to expose metrics
 	MetricsPath string
 }
@@ -21,6 +22,6 @@ type Options struct {
 func (o *Options) IsValid() bool {
 	return o != nil &&
 		o.SecretsFileName != "" &&
-		o.MetricsAddress != "" &&
+		o.ListenAddress != "" &&
 		o.MetricsPath != ""
 }
