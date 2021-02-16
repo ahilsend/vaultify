@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/spf13/pflag"
 	"os"
 	"time"
+
+	"github.com/spf13/pflag"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
