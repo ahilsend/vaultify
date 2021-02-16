@@ -92,6 +92,6 @@ func IncSecretLeaseFailed(role string, secret string) {
 	}).Inc()
 }
 
-func RegisterHandler(metricsPath string)  {
+func RegisterHandler(metricsPath string) {
 	http.Handle(metricsPath, promhttp.Handler())
 }
