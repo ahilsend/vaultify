@@ -2,6 +2,7 @@ package leases
 
 import (
 	"context"
+	"time"
 
 	"github.com/hashicorp/go-hclog"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/ahilsend/vaultify/pkg/secrets"
 	"github.com/ahilsend/vaultify/pkg/vault"
 )
+
+var retries int
 
 func Run(logger hclog.Logger, options *Options) error {
 	secretResult, err := secrets.Read(options.SecretsFileName)
@@ -25,10 +28,21 @@ func Run(logger hclog.Logger, options *Options) error {
 
 	ctx := context.Background()
 
+	// Reset the default mux to clear handlers
+	http.NewDefaultMux()
 	prometheus.RegisterHandler(options.MetricsPath)
 	go http.Serve(options.ListenAddress)
 	go vaultClient.StartAuthRenewal(ctx)
 	go vaultClient.RenewLeases(ctx, secretResult.Secrets)
 
-	return vaultClient.Wait(ctx)
+	err = vaultClient.Wait(ctx)
+	// We can safely retry fetching the secret as long as we get empty secret data from vault
+	if err == vault.ErrRenewerNoSecretData {
+		if retries <= options.MaxRetries {
+			retries++
+			time.Sleep(10 * time.Second)
+			Run(logger, options)
+		}
+	}
+	return err
 }

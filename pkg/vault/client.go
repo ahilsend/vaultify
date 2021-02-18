@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/ahilsend/vaultify/pkg/prometheus"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/command/agent/auth"
 	"github.com/hashicorp/vault/command/agent/auth/kubernetes"
 )
+
+var ErrRenewerNoSecretData = api.ErrRenewerNoSecretData
 
 type Client struct {
 	ApiClient   *api.Client
@@ -46,7 +49,9 @@ func createClient(logger hclog.Logger, auth func(*api.Client) (*api.Secret, stri
 	if err != nil {
 		return nil, err
 	}
-
+	if authSecret == nil {
+		return nil, ErrRenewerNoSecretData
+	}
 	client.SetToken(authSecret.Auth.ClientToken)
 	renewer, err := client.NewRenewer(&api.RenewerInput{
 		Secret: authSecret,
@@ -106,8 +111,15 @@ func kubernetesAuthentication(v *api.Client, logger hclog.Logger, role string) (
 	if err != nil {
 		return nil, err
 	}
-
-	return v.Logical().Write(path, data)
+	secret, err := v.Logical().Write(path, data)
+	if err != nil {
+		return nil, err
+	}
+	// secret can be nil if vault is down during authentication
+	if secret == nil {
+		return nil, fmt.Errorf("error autenticating, %v", ErrRenewerNoSecretData)
+	}
+	return secret, nil
 }
 
 func (v *Client) Wait(ctx context.Context) error {
@@ -144,11 +156,18 @@ func (v *Client) StartAuthRenewal(ctx context.Context) {
 
 		case err := <-v.authRenewer.DoneCh():
 			prometheus.IncAuthLeaseFailed(v.role)
-			v.logger.Warn("auth leaese renewer done channel triggered")
+			v.logger.Warn("auth lease renewer done channel triggered")
 			v.doneCh <- fmt.Errorf("auth lease renewer done: %v", err)
 			return
 
 		case renewed := <-v.authRenewer.RenewCh():
+			// nil checking for renewed secret
+			if renewed.Secret == nil {
+				v.logger.Error("auth lease renewer returned empty secret")
+				prometheus.IncAuthLeaseFailed(v.role)
+				v.doneCh <- ErrRenewerNoSecretData
+				return
+			}
 			hasWarnings := len(renewed.Secret.Warnings) > 0
 			prometheus.IncAuthLeaseRenewed(v.role, hasWarnings)
 			if v.logger.IsTrace() {
@@ -211,6 +230,12 @@ func (v *Client) startRenewal(ctx context.Context, name string, renewer *api.Ren
 			return
 
 		case renewed := <-renewer.RenewCh():
+			if renewed.Secret == nil {
+				v.logger.Error("lease renewer returned empty secret")
+				prometheus.IncSecretLeaseFailed(v.role, name)
+				v.doneCh <- ErrRenewerNoSecretData
+				return
+			}
 			hasWarnings := len(renewed.Secret.Warnings) > 0
 			prometheus.IncSecretLeaseRenewed(v.role, name, hasWarnings)
 			if v.logger.IsTrace() {
