@@ -10,3 +10,7 @@ func Serve(addr string) {
 	healthz.Register()
 	ghttp.ListenAndServe(addr, nil)
 }
+
+func NewDefaultMux() {
+	ghttp.DefaultServeMux = new(ghttp.ServeMux)
+}
