@@ -138,7 +138,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVar(
 		&flags.commonOptions.RateLimitBurst,
 		"rate-limit-burst",
-		2,
+		20,
 		"Rate limiting of requests, perform max X bursts")
 	rootCmd.PersistentFlags().DurationVar(
 		&flags.commonOptions.RateLimit,
