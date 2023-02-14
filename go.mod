@@ -10,7 +10,7 @@ require (
 	github.com/Masterminds/sprig v2.18.0+incompatible
 	github.com/aliyun/alibaba-cloud-sdk-go v0.0.0-20190322160716-69d623c6d25b // indirect
 	github.com/araddon/gou v0.0.0-20190110011759-c797efecbb61 // indirect
-	github.com/aws/aws-sdk-go v1.19.1 // indirect
+	github.com/aws/aws-sdk-go v1.34.0 // indirect
 	github.com/boombuler/barcode v1.0.0 // indirect
 	github.com/briankassouf/jose v0.9.1 // indirect
 	github.com/centrify/cloud-golang-sdk v0.0.0-20190214225812-119110094d0f // indirect
@@ -86,7 +86,6 @@ require (
 	github.com/ugorji/go/codec v0.0.0-20190320090025-2dc34c0b8780 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.opencensus.io v0.19.0 // indirect
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a // indirect
 	golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421 // indirect
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	google.golang.org/api v0.1.0 // indirect
