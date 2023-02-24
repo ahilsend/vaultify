@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -18,7 +19,15 @@ import (
 )
 
 var (
-	logger = hclog.Default()
+	logger = hclog.New(&hclog.LoggerOptions{
+		Output: hclog.NewLeveledWriter(
+			os.Stdout,
+			map[hclog.Level]io.Writer{
+				hclog.Error: os.Stderr,
+				hclog.Warn:  os.Stderr,
+			},
+		),
+	})
 
 	flags = struct {
 		logLevel              int
