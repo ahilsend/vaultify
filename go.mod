@@ -32,7 +32,6 @@ require (
 	github.com/gogo/protobuf v1.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
-	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75 // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect
@@ -65,8 +64,6 @@ require (
 	github.com/michaelklishin/rabbit-hole v1.5.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
 	github.com/mitchellh/pointerstructure v0.0.0-20190323210102-2db4bb651397 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/ory-am/common v0.4.0 // indirect
@@ -86,7 +83,7 @@ require (
 	github.com/ugorji/go/codec v0.0.0-20190320090025-2dc34c0b8780 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.opencensus.io v0.19.0 // indirect
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a // indirect
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 // indirect
 	golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421 // indirect
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	google.golang.org/api v0.1.0 // indirect
@@ -98,12 +95,10 @@ require (
 	gopkg.in/ory-am/dockertest.v2 v2.2.3 // indirect
 	gopkg.in/square/go-jose.v2 v2.3.0 // indirect
 	k8s.io/api v0.0.0-20190313115550-3c12c96769cc // indirect
-	k8s.io/apimachinery v0.0.0-20190323104403-03ac7a9ade42 // indirect
-	k8s.io/klog v0.2.0 // indirect
+	k8s.io/apimachinery v0.15.7 // indirect
 	labix.org/v2/mgo v0.0.0-20140701140051-000000000287 // indirect
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 	layeh.com/radius v0.0.0-20190322222518-890bc1058917 // indirect
-	sigs.k8s.io/yaml v1.1.0 // indirect
 )
 
 replace git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999 => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999
