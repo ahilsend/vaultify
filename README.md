@@ -1,6 +1,7 @@
 # vaultify
 
-** Deprecated **: You can use [Vault Agent](https://developer.hashicorp.com/vault/docs/agent-and-proxy/agent) instead.
+**Deprecated**: You can use [Vault Agent](https://developer.hashicorp.com/vault/docs/agent-and-proxy/agent) instead.
+
 
 
 [![Build Status](https://travis-ci.org/ahilsend/vaultify.svg?branch=master)](https://travis-ci.org/ahilsend/vaultify)
